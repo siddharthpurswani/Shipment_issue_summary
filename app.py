@@ -10,7 +10,7 @@ st.set_page_config(
 )
 
 # ─── Hardcoded n8n Webhook URL ─────────────────────────────────────────────────
-N8N_WEBHOOK_URL = "https://n8n-production-59bc.up.railway.app/workflow/zRccVSJcbuOw6vsK?projectId=7DCDWDWhvNxgquXC"  # ← update path if needed
+N8N_WEBHOOK_URL = "https://n8n-production-59bc.up.railway.app/webhook/shipment-lookup"  # ← update path if needed
 
 # ─── Custom CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
