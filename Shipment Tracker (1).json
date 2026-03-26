@@ -1,0 +1,180 @@
+{
+  "name": "Shipment Tracker",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "shipment-lookup",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a61b6d4d-6ae0-4a2e-85e0-1a7114bb386b",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        384,
+        -160
+      ],
+      "webhookId": "99e39e42-7ce4-49e1-94e9-2dbfae44b32d"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"ai_response\": \"{{ $('Basic LLM Chain').item.json.text }}\"\n}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "ba6b2719-7b2b-4dcf-934a-1ae7d4d643ef",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a logistics analyst assistant. Given the following shipment data, write a clear, \nfriendly explanation in 3-4 sentences. Do NOT use bullet points or technical jargon. \nCombine shipment details, payment status, and employee context naturally into one \nflowing paragraph. Avoid exposing raw field names, IDs, or status codes — translate \neverything into plain human language.\n\nStart with \"Shipment SH_{{ $('Google Sheets').item.json.Shipment_ID }} is...\"\n\nShipment Data:\n- Shipment ID: {{ $('Google Sheets').item.json.Shipment_ID }}\n- Domain: {{ $('Google Sheets').item.json.Shipment_domain }}\n- Service Type: {{ $('Google Sheets').item.json.Shipment_Service_Type }}\n- Weight: {{ $('Google Sheets').item.json.shipment_weight }} g\n- Status: {{ $('Google Sheets').item.json.Shipment_status }}\n- Start Date: {{ $('Google Sheets').item.json.shipment_start_date }}\n\nEmployee:\n- Name: {{ $('Google Sheets').item.json.employee_name }}\n- Role: {{ $('Google Sheets').item.json.employee_role }}\n\nPayment:\n- Status: {{ $('Google Sheets').item.json.payment_status }}\n- Amount: ₹{{ $('Google Sheets').item.json.amount }}\n- Method: {{ $('Google Sheets').item.json.payment_method }}\n\nCustomer Membership:\n- Member During Shipment: {{ $('Google Sheets').item.json.member_during_shipment }}\n- Membership Age: {{ $('Google Sheets').item.json.Membership_age }} years\n\nFollow these rules silently while writing — never mention them in your response:\n\nSHIPMENT: All shipments are delayed. Mention the domain and service type naturally \n(e.g. \"international express\", \"domestic regular\") as context for the delay. \nDo not treat delay as an error — present it as an ongoing situation.\n\nPAYMENT:\n- Cash on Delivery + not yet delivered → payment pending is normal and expected.\n  Say it will be collected once the shipment arrives.\n- Cash on Delivery + delivered but unpaid → flag gently as needing follow-up\n  with the delivery agent.\n- Card or Online payment + unpaid → this is an anomaly. Note that card payments\n  are usually processed upfront and suggest checking for a failed transaction\n  or billing issue.\n- Already paid → acknowledge briefly and positively, no concern needed.\n\nEMPLOYEE: Mention the employee's name and role naturally as the person managing \nthis shipment. Do not expose employee IDs.\n\nMEMBERSHIP: If the customer was not a member during the shipment, mention it briefly \nas context only if it adds value (e.g. no priority handling). Skip it if irrelevant.\n\nTONE: End every response with one calm, specific next step — urgent only if there \nis a real anomaly (e.g. card unpaid), otherwise keep it informational.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        864,
+        -160
+      ],
+      "id": "7001f92d-c6c1-46d3-aebd-5df274cd6f57",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1A567zDJVaTJpXOnXn3MR6zjUwPklMd7X-BHgaRQEPW8/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 572773661,
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1A567zDJVaTJpXOnXn3MR6zjUwPklMd7X-BHgaRQEPW8/edit#gid=572773661"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Shipment_ID",
+              "lookupValue": "={{ $('Webhook').item.json.body.shipment_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "48c0cc03-3a87-43bb-92d3-84e3e4aa8159",
+      "name": "Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        608,
+        -160
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "A2aDRQ8idD7yiEAp",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        864,
+        80
+      ],
+      "id": "da854971-9b92-4d15-b1f7-07fd357cd488",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "XhiJvHlLec8RNPiu",
+          "name": "Groq account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ddeba636-a01d-4c35-ac84-aeeff4ebba4c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "491e4b92e06ef3f522e704f633a201f41c86dcc046074222172bf0c78b0693a1"
+  },
+  "id": "zRccVSJcbuOw6vsK",
+  "tags": []
+}
